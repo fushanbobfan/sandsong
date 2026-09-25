@@ -1,0 +1,26 @@
+{
+  "name": "sandsong",
+  "version": "0.1.0",
+  "description": "A browser Chladni plate: sweep a tone across a vibrating square plate and watch sand gather on the lines that stay still.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "serve": "node scripts/serve.js"
+  },
+  "keywords": [
+    "chladni",
+    "vibration",
+    "standing-waves",
+    "physics",
+    "simulation",
+    "canvas",
+    "web-audio"
+  ],
+  "license": "MIT",
+  "author": "Jiayi Fan",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fushanbobfan/sandsong.git"
+  },
+  "private": false
+}
