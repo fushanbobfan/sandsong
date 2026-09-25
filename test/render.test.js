@@ -62,11 +62,15 @@ test('grains brighten their pixel and piles move further towards the sand colour
   paintSand(buffer, width, sand, palette);
   const pile = pixel(buffer, width, 5, 5);
   const lone = pixel(buffer, width, 0, 0);
+  const halo = pixel(buffer, width, 5, 4);
   const bare = pixel(buffer, width, 7, 2);
   assert.deepEqual(bare, [...palette.plate, 255]);
   assert.ok(lone[0] > palette.plate[0]);
   assert.ok(pile[0] > lone[0]);
   assert.ok(pile[0] <= palette.sand[0]);
+  assert.ok(halo[0] > palette.plate[0] && halo[0] < pile[0]);
+  // Diagonal neighbours are left alone.
+  assert.deepEqual(pixel(buffer, width, 6, 6), [...palette.plate, 255]);
 });
 
 test('frequencies read in Hz or kHz with sensible precision', () => {

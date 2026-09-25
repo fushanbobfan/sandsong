@@ -55,17 +55,27 @@ export function paintPlate(buffer, width, palette, overlay = null) {
   }
 }
 
-// Deposit grains: each one moves its pixel a step towards the sand colour,
-// so piles read brighter than lone grains.
-export function paintSand(buffer, width, sand, palette, grain = 0.45) {
+// Deposit grains: each one moves its pixel a step towards the sand colour
+// and its four neighbours a smaller step, so piles read brighter and thicker
+// than lone grains.
+export function paintSand(buffer, width, sand, palette, grain = 0.45, halo = 0.12) {
   const [sr, sg, sb] = palette.sand;
+  const deposit = (px, py, t) => {
+    const o = (py * width + px) * 4;
+    buffer[o] = mix(buffer[o], sr, t);
+    buffer[o + 1] = mix(buffer[o + 1], sg, t);
+    buffer[o + 2] = mix(buffer[o + 2], sb, t);
+  };
   for (let k = 0; k < sand.count; k++) {
     const px = toPixel(sand.x[k], width);
     const py = toPixel(sand.y[k], width);
-    const o = (py * width + px) * 4;
-    buffer[o] = mix(buffer[o], sr, grain);
-    buffer[o + 1] = mix(buffer[o + 1], sg, grain);
-    buffer[o + 2] = mix(buffer[o + 2], sb, grain);
+    deposit(px, py, grain);
+    if (halo > 0) {
+      if (px > 0) deposit(px - 1, py, halo);
+      if (px < width - 1) deposit(px + 1, py, halo);
+      if (py > 0) deposit(px, py - 1, halo);
+      if (py < width - 1) deposit(px, py + 1, halo);
+    }
   }
 }
 
