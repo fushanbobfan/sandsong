@@ -35,6 +35,8 @@
         <p class="readout"><output id="freq-value" for="freq">—</output></p>
         <label class="visually-hidden" for="freq">Drive frequency</label>
         <input id="freq" type="range" min="0" max="1" step="0.0002" value="0.5" />
+        <canvas id="spectrum" class="spectrum" width="600" height="72" role="img" aria-label="Response spectrum of the plate. Each peak is a resonance; click to tune."></canvas>
+        <p class="hint">Each peak is a resonance. Click the spectrum to tune; clicks near a peak snap to it.</p>
         <div class="buttons">
           <button id="prev-res" type="button" aria-label="Previous resonance">◀ Resonance</button>
           <button id="next-res" type="button" aria-label="Next resonance">Resonance ▶</button>
@@ -44,6 +46,31 @@
           <select id="mode"></select>
         </div>
         <p id="mode-readout" class="hint" aria-live="polite"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sweep</legend>
+        <div class="buttons">
+          <button id="sweep-down" type="button">◀ Sweep down</button>
+          <button id="sweep-up" type="button">Sweep up ▶</button>
+        </div>
+        <div class="control-row">
+          <label for="sweep-rate">Rate</label>
+          <select id="sweep-rate">
+            <option value="0.03">Slow · 1 octave in 33 s</option>
+            <option value="0.08" selected>Steady · 1 octave in 12 s</option>
+            <option value="0.25">Fast · 1 octave in 4 s</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <label for="sweep-hold">Stop at each resonance for</label>
+          <select id="sweep-hold">
+            <option value="0">Don't stop</option>
+            <option value="2">2 seconds</option>
+            <option value="4" selected>4 seconds</option>
+            <option value="8">8 seconds</option>
+          </select>
+        </div>
       </fieldset>
 
       <fieldset>
@@ -95,7 +122,7 @@
         <button id="copy-link" type="button">Copy link</button>
       </div>
 
-      <p class="hint keys">Keys: <kbd>←</kbd>/<kbd>→</kbd> fine tune · <kbd>[</kbd>/<kbd>]</kbd> previous/next resonance · <kbd>Space</kbd> pause · <kbd>P</kbd> pour · <kbd>T</kbd> tone</p>
+      <p class="hint keys">Keys: <kbd>←</kbd>/<kbd>→</kbd> fine tune · <kbd>[</kbd>/<kbd>]</kbd> previous/next resonance · <kbd>Space</kbd> pause · <kbd>P</kbd> pour · <kbd>T</kbd> tone · <kbd>S</kbd> sweep up or stop</p>
     </section>
   </main>
 

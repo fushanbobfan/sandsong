@@ -8,6 +8,8 @@ import {
 import { PALETTES, paletteById, paintPlate, paintSand, toPlate, formatFrequency } from './render.js';
 import { Tone } from './tone.js';
 import { encodeState, decodeState } from './share.js';
+import { sampleSpectrum, columnOf, frequencyAtColumn } from './spectrum.js';
+import { createSweep, stepSweep } from './sweep.js';
 
 const FIELD_SIZE = 128;
 const CAPACITY = 60000;
@@ -41,6 +43,9 @@ let field = null;
 let peak = 0;
 let weights = [];
 let frame = 0;
+let sweep = null;
+let lastTime = null;
+let spectrum = null;
 
 Object.assign(state, decodeState(location.hash));
 
@@ -54,13 +59,15 @@ function rebuildField() {
   peak = fieldPeak(field);
 }
 
-function setFrequency(f, { fromSlider = false } = {}) {
+function setFrequency(f, { fromSlider = false, fromSweep = false } = {}) {
+  if (!fromSweep) stopSweep();
   state.freq = clamp(f, MIN_FREQUENCY, MAX_FREQUENCY);
   if (!fromSlider) $('freq').value = frequencyToSlider(state.freq);
   $('freq-value').textContent = formatFrequency(state.freq);
   tone.setFrequency(state.freq);
   rebuildField();
   updateModeReadout();
+  drawSpectrum();
 }
 
 function updateModeReadout() {
@@ -105,7 +112,14 @@ function updateStatus() {
     : `${grains} · ${Math.round(nodal * 100)}% resting on nodal lines`;
 }
 
-function tick() {
+function tick(now) {
+  const dt = lastTime === null ? 0 : Math.min(0.1, (now - lastTime) / 1000);
+  lastTime = now;
+  if (sweep && !state.paused) {
+    const step = stepSweep(sweep, state.freq, dt, modes);
+    if (step.freq !== state.freq) setFrequency(step.freq, { fromSweep: true });
+    if (step.stopped) stopSweep();
+  }
   if (!state.paused) {
     const options = { kick: DEFAULTS.kick * state.shake, edges: state.edges };
     for (let s = 0; s < state.speed; s++) stepSand(sand, field, FIELD_SIZE, rng, options);
@@ -114,6 +128,94 @@ function tick() {
   if (frame++ % 15 === 0) updateStatus();
   requestAnimationFrame(tick);
 }
+
+// Spectrum strip.
+const spectrumCanvas = $('spectrum');
+const spectrumCtx = spectrumCanvas.getContext('2d');
+const SPECTRUM_FLOOR = -40;
+
+function drawSpectrum() {
+  const w = spectrumCanvas.width;
+  const h = spectrumCanvas.height;
+  if (!spectrum || spectrum.length !== w) {
+    spectrum = sampleSpectrum(modes, w, { floor: SPECTRUM_FLOOR });
+  }
+  spectrumCtx.clearRect(0, 0, w, h);
+  spectrumCtx.fillStyle = 'rgb(227 173 98 / 0.55)';
+  // Bars show linear amplitude: on a dB scale the shallow valleys between
+  // closely packed high modes would fill the strip.
+  for (let c = 0; c < w; c++) {
+    const level = Math.min(1, Math.pow(10, spectrum[c] / 20));
+    const bar = Math.max(1, level * (h - 4));
+    spectrumCtx.fillRect(c, h - bar, 1, bar);
+  }
+  const x = columnOf(state.freq, w) + 0.5;
+  spectrumCtx.fillStyle = '#8fd3ff';
+  spectrumCtx.fillRect(x - 1, 0, 2, h);
+}
+
+function fitSpectrum() {
+  const rect = spectrumCanvas.getBoundingClientRect();
+  const w = Math.max(100, Math.round(rect.width * (window.devicePixelRatio || 1)));
+  const h = Math.max(40, Math.round(rect.height * (window.devicePixelRatio || 1)));
+  if (w !== spectrumCanvas.width || h !== spectrumCanvas.height) {
+    spectrumCanvas.width = w;
+    spectrumCanvas.height = h;
+    drawSpectrum();
+  }
+}
+
+function tuneFromSpectrum(event) {
+  const rect = spectrumCanvas.getBoundingClientRect();
+  const position = ((event.clientX - rect.left) / rect.width) * spectrumCanvas.width;
+  const snap = 6 * (window.devicePixelRatio || 1);
+  setFrequency(frequencyAtColumn(modes, position, spectrumCanvas.width, snap));
+}
+
+spectrumCanvas.addEventListener('pointerdown', (event) => {
+  spectrumCanvas.setPointerCapture(event.pointerId);
+  tuneFromSpectrum(event);
+});
+spectrumCanvas.addEventListener('pointermove', (event) => {
+  if (spectrumCanvas.hasPointerCapture(event.pointerId)) tuneFromSpectrum(event);
+});
+window.addEventListener('resize', fitSpectrum);
+
+// Sweep.
+function startSweep(direction) {
+  if (sweep && sweep.direction === direction) {
+    stopSweep();
+    return;
+  }
+  stopSweep();
+  sweep = createSweep({
+    direction,
+    rate: Number($('sweep-rate').value),
+    hold: Number($('sweep-hold').value),
+  });
+  const button = direction > 0 ? $('sweep-up') : $('sweep-down');
+  button.textContent = 'Stop sweep';
+  button.setAttribute('aria-pressed', 'true');
+}
+
+function stopSweep() {
+  sweep = null;
+  $('sweep-up').textContent = 'Sweep up ▶';
+  $('sweep-down').textContent = '◀ Sweep down';
+  $('sweep-up').setAttribute('aria-pressed', 'false');
+  $('sweep-down').setAttribute('aria-pressed', 'false');
+}
+
+$('sweep-up').addEventListener('click', () => startSweep(1));
+$('sweep-down').addEventListener('click', () => startSweep(-1));
+$('sweep-rate').addEventListener('change', (e) => {
+  if (sweep) sweep.rate = Number(e.target.value);
+});
+$('sweep-hold').addEventListener('change', (e) => {
+  if (!sweep) return;
+  sweep.hold = Number(e.target.value);
+  sweep.holdLeft = Math.min(sweep.holdLeft, sweep.hold);
+});
 
 function jump(direction) {
   const mode = nextResonance(modes, state.freq, direction);
@@ -270,12 +372,18 @@ document.addEventListener('keydown', (event) => {
     case 'T':
       toggleTone();
       break;
+    case 's':
+    case 'S':
+      if (sweep) stopSweep();
+      else startSweep(1);
+      break;
     default:
       return;
   }
   event.preventDefault();
 });
 
+fitSpectrum();
 setFrequency(state.freq);
 pourSand();
 requestAnimationFrame(tick);

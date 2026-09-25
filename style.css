@@ -72,6 +72,16 @@ main {
   cursor: crosshair;
 }
 
+.spectrum {
+  display: block;
+  width: 100%;
+  height: 4.5rem;
+  border-radius: 4px;
+  background: #1a1611;
+  cursor: pointer;
+  touch-action: none;
+}
+
 .stage-bar {
   display: flex;
   flex-wrap: wrap;
