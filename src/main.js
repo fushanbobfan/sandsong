@@ -10,6 +10,7 @@ import { Tone } from './tone.js';
 import { encodeState, decodeState } from './share.js';
 import { sampleSpectrum, columnOf, frequencyAtColumn } from './spectrum.js';
 import { createSweep, stepSweep } from './sweep.js';
+import { nodalMask, paintMask, atlasRows } from './atlas.js';
 
 const FIELD_SIZE = 128;
 const CAPACITY = 60000;
@@ -46,6 +47,7 @@ let frame = 0;
 let sweep = null;
 let lastTime = null;
 let spectrum = null;
+const atlasItems = new Map();
 
 Object.assign(state, decodeState(location.hash));
 
@@ -79,6 +81,7 @@ function updateModeReadout() {
   // A single mode on resonance peaks at about 2, so peak / 2 is the plate's
   // motion as a share of a clean resonance.
   const strength = peak / 2;
+  highlightAtlas(strength >= QUIET && top.weight >= 0.5 ? top.mode.id : null);
   if (strength < QUIET) {
     $('mode-readout').textContent = `Between resonances: the plate is nearly still. ${nearest}`;
     return;
@@ -127,6 +130,60 @@ function tick(now) {
   render();
   if (frame++ % 15 === 0) updateStatus();
   requestAnimationFrame(tick);
+}
+
+// Mode atlas.
+const ATLAS_SIZE = 56;
+
+function buildAtlas() {
+  const container = $('atlas-rows');
+  for (const row of atlasRows(modes)) {
+    const line = document.createElement('div');
+    line.className = 'atlas-row';
+    const label = document.createElement('span');
+    label.className = 'atlas-order';
+    label.textContent = `n + m = ${row.order}`;
+    const list = document.createElement('ul');
+    list.className = 'atlas-list';
+    for (const mode of row.modes) {
+      const item = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'atlas-item';
+      button.setAttribute('aria-label', `Mode (${mode.id}) at ${formatFrequency(mode.freq)}`);
+      const thumb = document.createElement('canvas');
+      thumb.width = ATLAS_SIZE;
+      thumb.height = ATLAS_SIZE;
+      thumb.setAttribute('aria-hidden', 'true');
+      const caption = document.createElement('span');
+      caption.textContent = mode.id;
+      button.append(thumb, caption);
+      button.addEventListener('click', () => setFrequency(mode.freq));
+      item.append(button);
+      list.append(item);
+      atlasItems.set(mode.id, { button, thumb, mask: nodalMask(mode, ATLAS_SIZE) });
+    }
+    line.append(label, list);
+    container.append(line);
+  }
+  paintAtlas();
+}
+
+function paintAtlas() {
+  const palette = paletteById(state.palette);
+  for (const { thumb, mask } of atlasItems.values()) {
+    const tctx = thumb.getContext('2d');
+    const img = tctx.createImageData(ATLAS_SIZE, ATLAS_SIZE);
+    paintMask(img.data, mask, palette.sand, palette.plate);
+    tctx.putImageData(img, 0, 0);
+  }
+}
+
+function highlightAtlas(id) {
+  for (const [key, { button }] of atlasItems) {
+    if (key === id) button.setAttribute('aria-current', 'true');
+    else button.removeAttribute('aria-current');
+  }
 }
 
 // Spectrum strip.
@@ -260,6 +317,7 @@ for (const p of PALETTES) $('palette').append(new Option(p.name, p.id));
 $('palette').value = state.palette;
 $('palette').addEventListener('change', (e) => {
   state.palette = e.target.value;
+  paintAtlas();
 });
 
 $('edges').value = state.edges;
@@ -383,6 +441,7 @@ document.addEventListener('keydown', (event) => {
   event.preventDefault();
 });
 
+buildAtlas();
 fitSpectrum();
 setFrequency(state.freq);
 pourSand();

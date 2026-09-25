@@ -53,6 +53,12 @@ own column, so peaks narrower than a pixel still show. Bars are linear in
 amplitude, because on a dB scale the shallow valleys between the densely
 packed high modes would fill the strip.
 
+**Atlas.** Under the plate, every mode's nodal lines are drawn straight from
+its shape: a thumbnail pixel is inked when the shape changes sign across its
+four corners. Rows group modes by n + m, which roughly orders the figures by
+complexity. The thumbnail of the mode being driven is highlighted, and
+choosing one tunes the plate to that resonance so the sand can draw it.
+
 **Sand.** Every frame each grain hops a random distance proportional to the
 plate's motion beneath it. Below a small friction threshold it stays put.
 Grains also slide slightly down the slope of the plate's vibration energy,
@@ -67,6 +73,7 @@ where the plate moves less than 15 % of its peak.
 | Frequency slider | Sweeps the drive tone on a log scale from 60 Hz to 6 kHz |
 | ◀ / ▶ Resonance | Jumps to the next natural frequency below or above |
 | Jump to a mode | Picks any of the 48 modes by label and frequency |
+| Mode atlas | Shows every figure at once; pick one to drive the plate at its resonance |
 | Spectrum strip | Click or drag to tune; within a few pixels of a peak it snaps to the resonance |
 | Sweep up / down | Glides the drive at 1 octave per 33 s, 12 s or 4 s, optionally stopping 2, 4 or 8 s on each resonance; any manual tuning stops it |
 | Play tone | Plays the drive frequency through the speakers |
@@ -95,6 +102,7 @@ src/tone.js       Web Audio drive tone
 src/share.js      URL hash codec
 src/spectrum.js   response spectrum sampling and click snapping
 src/sweep.js      automatic sweep with resonance holds
+src/atlas.js      nodal-line masks and atlas rows
 src/main.js       DOM wiring and animation loop
 test/             node:test suites for every module except main.js
 ```
