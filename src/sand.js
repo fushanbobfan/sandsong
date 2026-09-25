@@ -2,9 +2,12 @@
 //
 // Each frame a grain is kicked in a random direction by a distance
 // proportional to how hard the plate shakes beneath it. Where the plate barely
-// moves the kick falls under a small friction threshold and the grain stays
-// put, so grains wander off the loud regions and pile up along the nodal
-// lines, which is exactly what Chladni saw.
+// moves the kick falls under a small friction threshold, so grains wander off
+// the loud regions and pile up along the nodal lines, which is exactly what
+// Chladni saw. On their own the random kicks leave grains stranded along both
+// edges of the quiet band around each line, so each grain also slides a
+// little down the slope of the plate's vibration energy, which draws the two
+// edges together onto the line itself.
 
 import { amplitudeAt } from './plate.js';
 
@@ -23,6 +26,7 @@ export function makeRng(seed) {
 export const DEFAULTS = Object.freeze({
   kick: 0.04,
   friction: 0.004,
+  drift: 0.7,
   edges: 'bounce',
 });
 
@@ -81,21 +85,27 @@ function reflect(v) {
 export function stepSand(sand, field, size, rng, options = {}) {
   const kick = options.kick ?? DEFAULTS.kick;
   const friction = options.friction ?? DEFAULTS.friction;
+  const drift = (options.drift ?? DEFAULTS.drift) * kick;
+  const h = 1 / size;
   const spill = (options.edges ?? DEFAULTS.edges) === 'spill';
   let k = 0;
   let lost = 0;
   while (k < sand.count) {
     const x = sand.x[k];
     const y = sand.y[k];
-    const hop = kick * amplitudeAt(field, size, x, y);
-    if (hop <= friction) {
-      k++;
-      continue;
+    const amp = amplitudeAt(field, size, x, y);
+    // Slope of amp² / 2 by central differences, one grid cell each way.
+    const gx = (amplitudeAt(field, size, x + h, y) - amplitudeAt(field, size, x - h, y)) / (2 * h);
+    const gy = (amplitudeAt(field, size, x, y + h) - amplitudeAt(field, size, x, y - h)) / (2 * h);
+    let nx = x - drift * amp * gx * h;
+    let ny = y - drift * amp * gy * h;
+    const hop = kick * amp;
+    if (hop > friction) {
+      const r = hop * Math.sqrt(rng());
+      const a = rng() * 2 * Math.PI;
+      nx += r * Math.cos(a);
+      ny += r * Math.sin(a);
     }
-    const r = hop * Math.sqrt(rng());
-    const a = rng() * 2 * Math.PI;
-    let nx = x + r * Math.cos(a);
-    let ny = y + r * Math.sin(a);
     if (nx < -1 || nx > 1 || ny < -1 || ny > 1) {
       if (spill) {
         const last = sand.count - 1;

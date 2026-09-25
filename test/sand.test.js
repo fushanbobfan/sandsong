@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   makeRng, createSand, pour, sprinkle, sprinkleAt, stepSand, nodalShare,
 } from '../src/sand.js';
-import { modeList, modeWeights, sampleField, fieldPeak } from '../src/plate.js';
+import { modeList, modeWeights, sampleField, fieldPeak, amplitudeAt } from '../src/plate.js';
 
 function inside(sand) {
   for (let k = 0; k < sand.count; k++) {
@@ -98,6 +98,25 @@ test('on a resonance, grains gather on the nodal lines', () => {
   const end = nodalShare(sand, field, size, peak);
   assert.ok(start < 0.3, `start ${start}`);
   assert.ok(end > 0.75, `end ${end}`);
+});
+
+test('drift pulls settled grains onto the lines instead of the edges of the quiet band', () => {
+  const size = 96;
+  const modes = modeList();
+  const mode = modes.find((m) => m.id === '2,5+');
+  const field = sampleField(modeWeights(modes, mode.freq), size);
+  const settle = (drift) => {
+    const rng = makeRng(11);
+    const sand = createSand(3000);
+    pour(sand, 3000, rng);
+    for (let k = 0; k < 300; k++) stepSand(sand, field, size, rng, { drift });
+    let total = 0;
+    for (let k = 0; k < sand.count; k++) total += amplitudeAt(field, size, sand.x[k], sand.y[k]);
+    return total / sand.count;
+  };
+  const without = settle(0);
+  const withDrift = settle(0.7);
+  assert.ok(withDrift < without * 0.7, `${withDrift} vs ${without}`);
 });
 
 test('nodal share is null for an empty plate or a quiet one', () => {
