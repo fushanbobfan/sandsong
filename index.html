@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sandsong</title>
+  <meta name="description" content="A browser Chladni plate: sweep a tone across a vibrating square plate and watch sand gather on the lines that stay still." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Sandsong</h1>
+    <p class="subtitle">Sing to a square plate covered in sand. At each resonance the grains run from the shaking parts and draw the lines that stay still.</p>
+  </header>
+
+  <main>
+    <section class="stage" aria-label="Plate">
+      <div class="plate-wrap">
+        <canvas id="plate" width="512" height="512" role="img" aria-label="Vibrating plate covered in sand"></canvas>
+      </div>
+      <div class="stage-bar">
+        <p id="status" class="status" aria-live="polite"></p>
+        <div class="buttons">
+          <button id="pause" type="button">Pause</button>
+          <button id="pour" type="button">Pour fresh sand</button>
+        </div>
+      </div>
+      <p class="hint">Drag across the plate to sprinkle extra sand.</p>
+    </section>
+
+    <section class="controls" aria-label="Controls">
+      <fieldset>
+        <legend>Drive frequency</legend>
+        <p class="readout"><output id="freq-value" for="freq">—</output></p>
+        <label class="visually-hidden" for="freq">Drive frequency</label>
+        <input id="freq" type="range" min="0" max="1" step="0.0002" value="0.5" />
+        <div class="buttons">
+          <button id="prev-res" type="button" aria-label="Previous resonance">◀ Resonance</button>
+          <button id="next-res" type="button" aria-label="Next resonance">Resonance ▶</button>
+        </div>
+        <div class="control-row">
+          <label for="mode">Jump to a mode</label>
+          <select id="mode"></select>
+        </div>
+        <p id="mode-readout" class="hint" aria-live="polite"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sound</legend>
+        <div class="control-row inline">
+          <button id="tone" type="button" aria-pressed="false">Play tone</button>
+          <label for="volume">Volume</label>
+          <input id="volume" type="range" min="0" max="0.5" step="0.01" value="0.12" />
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sand</legend>
+        <div class="control-row">
+          <label for="grains">Grains <output id="grains-value" for="grains">20 000</output></label>
+          <input id="grains" type="range" min="2000" max="60000" step="1000" value="20000" />
+        </div>
+        <div class="control-row">
+          <label for="shake">Shake strength <output id="shake-value" for="shake">1.0×</output></label>
+          <input id="shake" type="range" min="0.25" max="3" step="0.05" value="1" />
+        </div>
+        <div class="control-row">
+          <label for="speed">Speed <output id="speed-value" for="speed">2×</output></label>
+          <input id="speed" type="range" min="1" max="8" step="1" value="2" />
+        </div>
+        <div class="control-row">
+          <label for="edges">At the edges</label>
+          <select id="edges">
+            <option value="bounce">Grains bounce back</option>
+            <option value="spill">Grains fall off</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Display</legend>
+        <div class="control-row">
+          <label for="palette">Colours</label>
+          <select id="palette"></select>
+        </div>
+        <div class="control-row inline">
+          <input id="tint" type="checkbox" />
+          <label for="tint">Show the plate's motion</label>
+        </div>
+      </fieldset>
+
+      <div class="control-row inline">
+        <button id="save-png" type="button">Save PNG</button>
+        <button id="copy-link" type="button">Copy link</button>
+      </div>
+
+      <p class="hint keys">Keys: <kbd>←</kbd>/<kbd>→</kbd> fine tune · <kbd>[</kbd>/<kbd>]</kbd> previous/next resonance · <kbd>Space</kbd> pause · <kbd>P</kbd> pour · <kbd>T</kbd> tone</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      A thin square plate held at its centre rings in standing waves. Each mode
+      has lines where the plate never moves. Driven at one of its resonances,
+      the plate shakes hard everywhere else, sand hops off the moving regions,
+      and it comes to rest on those nodal lines. Between resonances the plate
+      barely moves and the sand stays where it is. Ernst Chladni showed these
+      figures with a violin bow in 1787.
+    </p>
+  </footer>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
