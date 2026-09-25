@@ -12,6 +12,9 @@ import { encodeState, decodeState } from './share.js';
 const FIELD_SIZE = 128;
 const CAPACITY = 60000;
 const START_MODE = '2,5+';
+// Below this share of full response the plate counts as still. A single mode
+// peaks at about twice its weight, hence the doubled threshold for the field.
+const QUIET = 0.05;
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('plate');
@@ -66,7 +69,7 @@ function updateModeReadout() {
   const top = weights[0];
   const onMode = near && Math.abs(near.freq / state.freq - 1) < 1e-6;
   $('mode').value = onMode ? near.id : '';
-  if (!top || top.weight < 0.05) {
+  if (!top || top.weight < QUIET) {
     $('mode-readout').textContent = `Between resonances: the plate is nearly still. Nearest mode (${near.id}) at ${formatFrequency(near.freq)}.`;
     return;
   }
@@ -88,7 +91,7 @@ function render() {
 }
 
 function updateStatus() {
-  const nodal = nodalShare(sand, field, FIELD_SIZE, peak);
+  const nodal = nodalShare(sand, field, FIELD_SIZE, peak, 0.15, 2 * QUIET);
   const grains = `${sand.count.toLocaleString()} grains`;
   $('status').textContent = nodal === null
     ? `${grains} · plate quiet`
