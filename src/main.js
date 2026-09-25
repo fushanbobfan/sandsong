@@ -171,6 +171,7 @@ $('grains').addEventListener('input', (e) => {
   $('grains-value').textContent = state.grains.toLocaleString();
 });
 $('grains').addEventListener('change', pourSand);
+$('grains-value').textContent = state.grains.toLocaleString();
 
 $('shake').addEventListener('input', (e) => {
   state.shake = Number(e.target.value);
