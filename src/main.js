@@ -12,8 +12,7 @@ import { encodeState, decodeState } from './share.js';
 const FIELD_SIZE = 128;
 const CAPACITY = 60000;
 const START_MODE = '2,5+';
-// Below this share of full response the plate counts as still. A single mode
-// peaks at about twice its weight, hence the doubled threshold for the field.
+// Below this share of a clean resonance's motion the plate counts as still.
 const QUIET = 0.05;
 
 const $ = (id) => document.getElementById(id);
@@ -69,8 +68,16 @@ function updateModeReadout() {
   const top = weights[0];
   const onMode = near && Math.abs(near.freq / state.freq - 1) < 1e-6;
   $('mode').value = onMode ? near.id : '';
-  if (!top || top.weight < QUIET) {
-    $('mode-readout').textContent = `Between resonances: the plate is nearly still. Nearest mode (${near.id}) at ${formatFrequency(near.freq)}.`;
+  const nearest = `Nearest resonance (${near.id}) at ${formatFrequency(near.freq)}.`;
+  // A single mode on resonance peaks at about 2, so peak / 2 is the plate's
+  // motion as a share of a clean resonance.
+  const strength = peak / 2;
+  if (strength < QUIET) {
+    $('mode-readout').textContent = `Between resonances: the plate is nearly still. ${nearest}`;
+    return;
+  }
+  if (top.weight < 0.5) {
+    $('mode-readout').textContent = `Between resonances: a weak blend of modes at ${Math.round(strength * 100)}% strength. ${nearest}`;
     return;
   }
   const percent = Math.round(top.weight * 100);
