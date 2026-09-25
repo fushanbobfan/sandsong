@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sandsong</title>
   <meta name="description" content="A browser Chladni plate: sweep a tone across a vibrating square plate and watch sand gather on the lines that stay still." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%233a2c1a'/%3E%3Cpath d='M4 16h24M16 4v24M6 6l20 20M26 6 6 26' stroke='%23f4e2ba' stroke-width='2'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -57,7 +58,7 @@
       <fieldset>
         <legend>Sand</legend>
         <div class="control-row">
-          <label for="grains">Grains <output id="grains-value" for="grains">20 000</output></label>
+          <label for="grains">Grains <output id="grains-value" for="grains">20,000</output></label>
           <input id="grains" type="range" min="2000" max="60000" step="1000" value="20000" />
         </div>
         <div class="control-row">
@@ -100,8 +101,8 @@
 
   <footer>
     <p>
-      A thin square plate held at its centre rings in standing waves. Each mode
-      has lines where the plate never moves. Driven at one of its resonances,
+      A thin square plate rings in standing waves. Each mode has lines where
+      the plate never moves. Driven at one of its resonances,
       the plate shakes hard everywhere else, sand hops off the moving regions,
       and it comes to rest on those nodal lines. Between resonances the plate
       barely moves and the sand stays where it is. Ernst Chladni showed these
